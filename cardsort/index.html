@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sort Cards</title>
+    <script src="./const.js"></script>
+    <script src="./cards.js"></script>
+    <script src="./cardutil.js"></script>
+    <script src="./drawer.js"></script>
+    <style type="text/css">
+      canvas {
+        background: green;
+      }
+      .canvasContainer {
+        grid-area: main;
+      }
+      .controls {
+        grid-area: right;
+        padding: 8px;
+      }
+      .grid-container {
+        display: grid;
+        grid-template-columns: 800px auto;
+        grid-template-areas: "main right";
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <div class="grid-container">
+        <div id="canvasContainer" class="canvasContainer">
+          <canvas id="canvas" width="800" height="700">
+            This text is displayed if your browser does not support HTML5
+            Canvas.
+          </canvas>
+        </div>
+        <div class="controls">
+          <h2>Controls</h2>
+          <div>
+            <h3>Common Tools</h3>
+            <button id="btnComShuffle">Shuffle</button>
+            <button id="btnComReset">Reset</button>
+            <button id="btnComSnap">Snap</button>
+            <button id="btnComLineUp">Line Up</button>
+          </div>
+          <div>
+            <h3>Bubble Tools</h3>
+            <button id="btnBubMoveDown">Next</button>
+            <button id="btnBubSwapNext">Swap Next</button>
+            <button id="btnBubNextMove">Next Move</button>
+            <button id="btnBubNextMoveShortcut">Next Move (Shortcut)</button>
+          </div>
+          <div>
+              <h3>Insert Tools</h3>
+              <button id="btnInsMoveDown">Next</button>
+              <button id="btnInsShiftAllRight">Insert</button>
+              <button id="btnInsNextMove">Next Move</button>
+          </div>
+          <div>
+              <h3>Merge Tools</h3>
+              <button id="btnMerShiftAllDown">Shift Down</button>
+              <button id="btnMerShiftAllUp">Shift Up</button>
+          </div>
+        </div>
+      </div>
+      <script src="./main.js"></script>
+    </section>
+  </body>
+</html>
