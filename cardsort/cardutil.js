@@ -92,6 +92,16 @@ CardUtil.prototype.cardSwap = function(cardLeft, cardRight, state) {
   var swapY = cardLeft.locY;
   cardLeft.locY = cardRight.locY;
   cardRight.locY = swapY;
+  //cardRight.locX += CARD_SCALE_HEIGHT / 3 + this.spacing;
+  //cardRight.swapped = true;
+  //state.isDirty = true;
+};
+
+
+CardUtil.prototype.cardSwapAndShift = function(cardLeft, cardRight, state) {
+  var swapY = cardLeft.locY;
+  cardLeft.locY = cardRight.locY;
+  cardRight.locY = swapY;
   cardRight.locX += CARD_SCALE_HEIGHT / 3 + this.spacing;
   cardRight.swapped = true;
   state.isDirty = true;

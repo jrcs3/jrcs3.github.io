@@ -28,20 +28,21 @@ var img = new Image();
 img.src = "cards.png";
 
 function linkControls() {
-  bindCtlTo("btnComShuffle", "click", e => shuffle());
-  bindCtlTo("btnBubMoveDown", "click", e => moveDown());
-  bindCtlTo("btnBubSwapNext", "click", e => swapAndMoveDown());
+  bindCtlTo("btnComShuffle", "click", shuffle);
+  bindCtlTo("btnBubMoveDown", "click", moveDown);
+  bindCtlTo("btnBubSwapNext", "click", swapAndMoveDown);
   bindCtlTo("btnBubNextMove", "click", e => nextMove(false));
   bindCtlTo("btnBubNextMoveShortcut", "click", e => nextMove(true));
-  bindCtlTo("btnComReset", "click", e => resetDeck());
-  bindCtlTo("btnComSnap", "click", e => snapSelectedCard());
-  bindCtlTo("btnComLineUp", "click", e => lineupCards());
-  bindCtlTo("btnInsShiftAllRight", "click", e => shiftAllRight());
-  bindCtlTo("btnInsNextMove", "click", e => mergeNextMove());
-  bindCtlTo("btnMerShiftAllDown", "click", e => shiftAllDown());
-  bindCtlTo("btnInsMoveDown", "click", e => moveDown());
-  bindCtlTo("btnMerShiftAllUp", "click", e => shiftAllUp());
-  bindCtlTo("body", "keydown", e => canvasKeyDown(e));
+  bindCtlTo("btnComReset", "click", resetDeck);
+  bindCtlTo("btnComSnap", "click", snapSelectedCard);
+  bindCtlTo("btnComLineUp", "click", lineupCards);
+  bindCtlTo("btnInsShiftAllRight", "click", shiftAllRight);
+  bindCtlTo("btnInsNextMove", "click", mergeNextMove);
+  bindCtlTo("btnMerShiftAllDown", "click", shiftAllDown);
+  bindCtlTo("btnInsMoveDown", "click", moveDown);
+  bindCtlTo("btnMerShiftAllUp", "click", shiftAllUp);
+  bindCtlTo("btnMerSwapRight", "click", SwapRight);
+  bindCtlTo("body", "keydown", canvasKeyDown);
 }
 
 function bindCtlTo(id, event, action) {
@@ -66,7 +67,21 @@ function canvasKeyDown(e) {
     case "ArrowRight":
       return shiftAllRight();
   }
-  console.log(e);
+  //console.log(e);
+}
+
+function SwapRight() {
+  if (selectedCard) {
+    //state.comparisons++;
+    var otherCard = cardUtil.getSelectedCard(
+      deck,
+      selectedCard.locY + CARD_SCALE_WIDTH * 2,
+      selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+    );
+    if (otherCard) {
+      cardUtil.cardSwap(selectedCard, otherCard, state);
+    }
+  }
 }
 
 function shuffle() {
@@ -195,7 +210,7 @@ function nextMove(shortcut) {
 
     if (otherCard) {
       if (otherCard.value < selectedCard.value) {
-        cardUtil.cardSwap(selectedCard, otherCard, state);
+        cardUtil.cardSwapAndShift(selectedCard, otherCard, state);
       } else {
         selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
         selectedCard.isSelected = false;
@@ -251,7 +266,7 @@ function swapAndMoveDown() {
       selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
     if (otherCard) {
-      cardUtil.cardSwap(selectedCard, otherCard, state);
+      cardUtil.cardSwapAndShift(selectedCard, otherCard, state);
     }
   }
 }
