@@ -26,7 +26,6 @@ resetDeck();
 
 var img = new Image();
 img.src = "cards.png";
-linkControls();
 
 function linkControls() {
   bindCtlTo("btnComShuffle", "click", e => shuffle());
@@ -42,6 +41,32 @@ function linkControls() {
   bindCtlTo("btnMerShiftAllDown", "click", e => shiftAllDown());
   bindCtlTo("btnInsMoveDown", "click", e => moveDown());
   bindCtlTo("btnMerShiftAllUp", "click", e => shiftAllUp());
+  bindCtlTo("body", "keydown", e => canvasKeyDown(e));
+}
+
+function bindCtlTo(id, event, action) {
+  const ctl = document.getElementById(id);
+  ctl.addEventListener(event, action);
+}
+
+function canvasKeyDown(e) {
+  switch (e.key) {
+    case "1":
+      return nextMove(false);
+    case "2":
+      return nextMove(true);
+    case "3":
+      return mergeNextMove();
+    case "a":
+      return snapSelectedCard();
+    case "ArrowDown":
+      return shiftAllDown();
+    case "ArrowUp":
+      return shiftAllUp();
+    case "ArrowRight":
+      return shiftAllRight();
+  }
+  console.log(e);
 }
 
 function shuffle() {
@@ -108,11 +133,6 @@ function mergeProcessFoundMatch(card) {
   card.swapped = true;
   state.cycles++;
   state.isDirty = false;
-}
-
-function bindCtlTo(id, event, action) {
-  const ctl = document.getElementById(id);
-  ctl.addEventListener(event, action);
 }
 
 function shiftAllRight() {
@@ -293,3 +313,5 @@ function myUp() {
 init();
 canvas.onmousedown = myDown;
 canvas.onmouseup = myUp;
+
+linkControls();
