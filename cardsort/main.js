@@ -1,10 +1,5 @@
-//import { WIDTH, HEIGHT } from './const';
-//const CONST = require('.const')
-//console.log( `${CONST.HEIGHT}, ${CONST.WIDTH}`);
 var canvas;
 var ctx;
-// let offsetLeft;
-// let offsetTop;
 
 var x = 75;
 var y = 50;
@@ -20,7 +15,12 @@ const state = {
 };
 var dragok = false;
 
-var deck = cardUtil.getSuitOfCards(2);
+var order = getInitalOrder();
+
+let suit = parseInt(getParameterByName("suit") || 2);
+//let suit = Math.floor(Math.random() * 4);
+let deck = cardUtil.getSuitOfCards(suit, order);
+//deck = cardUtil.setDeckOrder(deck, order);
 let selectedCard;
 resetDeck();
 
@@ -41,7 +41,10 @@ function linkControls() {
   bindCtlTo("btnMerShiftAllDown", "click", shiftAllDown);
   bindCtlTo("btnInsMoveDown", "click", moveDown);
   bindCtlTo("btnMerShiftAllUp", "click", shiftAllUp);
-  bindCtlTo("btnMerSwapRight", "click", SwapRight);
+  bindCtlTo("btnMerSwapRight", "click", swapRight);
+  bindCtlTo("btnQusMoveToCol", "click", moveToCol);
+  bindCtlTo("btnQusFirstInRow", "click", firstInRow);
+  bindCtlTo("btnQusLastInRow", "click", lastInRow);
   bindCtlTo("body", "keydown", canvasKeyDown);
 }
 
@@ -64,13 +67,39 @@ function canvasKeyDown(e) {
       return shiftAllDown();
     case "ArrowUp":
       return shiftAllUp();
+    case "ArrowLeft":
+      return shiftAllLeft();
     case "ArrowRight":
       return shiftAllRight();
   }
   //console.log(e);
 }
 
-function SwapRight() {
+function firstInRow() {
+  if (selectedCard) {
+    selectedCard.isSelected = false;
+    selectedCard = cardUtil.getEndOfRow(selectedCard, deck, true);
+  }
+}
+
+function lastInRow() {
+  if (selectedCard) {
+    selectedCard.isSelected = false;
+    selectedCard = cardUtil.getEndOfRow(selectedCard, deck, false);
+  }
+}
+
+function moveToCol() {
+  if (selectedCard) {
+    selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    selectedCard.locY =
+      Math.floor(cardUtil.cardWidth * (selectedCard.value - 1)) +
+      cardUtil.leftOffset;
+  }
+}
+
+function swapRight() {
   if (selectedCard) {
     //state.comparisons++;
     var otherCard = cardUtil.getSelectedCard(
@@ -107,7 +136,7 @@ function mergeNextMove() {
       selectedCard.isSelected = false;
       const x = selectedCard.locX;
       const y = selectedCard.locY;
-      cardUtil.shiftAllRight(selectedCard, deck);
+      cardUtil.shiftAllHorz(selectedCard, deck, false);
       card.locX = x;
       card.locY = y;
       var otherCard = cardUtil.getSelectedCard(
@@ -116,7 +145,7 @@ function mergeNextMove() {
         selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
       );
       if (otherCard) {
-        cardUtil.shiftAllDown(otherCard, deck);
+        cardUtil.shiftAllVert(otherCard, deck, false);
       }
       mergeProcessFoundMatch(card);
     } else {
@@ -152,20 +181,25 @@ function mergeProcessFoundMatch(card) {
 
 function shiftAllRight() {
   if (selectedCard) {
-    cardUtil.shiftAllRight(selectedCard, deck);
-    state.comparisons++;
+    cardUtil.shiftAllHorz(selectedCard, deck, false);
+  }
+}
+
+function shiftAllLeft() {
+  if (selectedCard) {
+    cardUtil.shiftAllHorz(selectedCard, deck, true);
   }
 }
 
 function shiftAllDown() {
   if (selectedCard) {
-    cardUtil.shiftAllDown(selectedCard, deck);
+    cardUtil.shiftAllVert(selectedCard, deck, false);
   }
 }
 
 function shiftAllUp() {
   if (selectedCard) {
-    cardUtil.shiftAllUp(selectedCard, deck);
+    cardUtil.shiftAllVert(selectedCard, deck, true);
   }
 }
 
@@ -323,6 +357,26 @@ function myDown(e) {
 function myUp() {
   dragok = false;
   canvas.onmousemove = null;
+}
+
+function getParameterByName(name, url) {
+  if (!url) url = window.location.href;
+  name = name.replace(/[\[\]]/g, "\\$&");
+  var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+    results = regex.exec(url);
+  if (!results) return null;
+  if (!results[2]) return "";
+  return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+function getInitalOrder() {
+  order = getParameterByName("order");
+  if (!order) {
+    let returnValue = [...Array(14).keys()];
+    returnValue.shift();
+    return returnValue;
+  }
+  return order.split(",").map(item => parseInt(item));
 }
 
 init();

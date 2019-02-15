@@ -29,9 +29,12 @@ CardUtil.prototype.shuffle = function(a) {
   return a;
 };
 
-CardUtil.prototype.getSuitOfCards = function(suiteId) {
+CardUtil.prototype.getSuitOfCards = function(suit, order) {
   var deckOfCards = [];
-  for (var cardId = 1; cardId <= 13; ++cardId) {
+  const suiteId = suit - 1;
+  //for (var cardId = 1; cardId <= 13; ++cardId) {
+  for(var cardId of order) {
+    console.log(cardId);
     deckOfCards.push(
       new Card(
         suiteId,
@@ -41,7 +44,7 @@ CardUtil.prototype.getSuitOfCards = function(suiteId) {
       )
     );
   }
-  return this.shuffle(this.shuffle(deckOfCards));
+  return deckOfCards;
 };
 
 CardUtil.prototype.placeCardPostions = function(cards) {
@@ -92,16 +95,10 @@ CardUtil.prototype.cardSwap = function(cardLeft, cardRight, state) {
   var swapY = cardLeft.locY;
   cardLeft.locY = cardRight.locY;
   cardRight.locY = swapY;
-  //cardRight.locX += CARD_SCALE_HEIGHT / 3 + this.spacing;
-  //cardRight.swapped = true;
-  //state.isDirty = true;
 };
 
-
 CardUtil.prototype.cardSwapAndShift = function(cardLeft, cardRight, state) {
-  var swapY = cardLeft.locY;
-  cardLeft.locY = cardRight.locY;
-  cardRight.locY = swapY;
+  this.cardSwap(cardLeft, cardRight);
   cardRight.locX += CARD_SCALE_HEIGHT / 3 + this.spacing;
   cardRight.swapped = true;
   state.isDirty = true;
@@ -128,7 +125,7 @@ CardUtil.prototype.lineupCards = function(deck) {
   }
 };
 
-CardUtil.prototype.shiftAllRight = function(card, deck) {
+CardUtil.prototype.shiftAllHorz = function(card, deck, shiftLeft) {
   let thisCard = card;
   do {
     var otherCard = cardUtil.getSelectedCard(
@@ -136,7 +133,9 @@ CardUtil.prototype.shiftAllRight = function(card, deck) {
       thisCard.locY + CARD_SCALE_WIDTH * 2,
       thisCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
-    const snapFactorY = Math.floor(thisCard.locY / this.cardWidth) + 1;
+    const snapFactorY = shiftLeft
+      ? Math.floor(thisCard.locY / this.cardWidth) - 1
+      : Math.floor(thisCard.locY / this.cardWidth) + 1;
     thisCard.locY = Math.floor(this.cardWidth * snapFactorY) + this.leftOffset;
     //thisCard.locX += CARD_SCALE_HEIGHT / 3 + this.spacing;
 
@@ -146,7 +145,7 @@ CardUtil.prototype.shiftAllRight = function(card, deck) {
   } while (otherCard);
 };
 
-CardUtil.prototype.shiftAllDown = function(card, deck) {
+CardUtil.prototype.shiftAllVert = function(card, deck, shiftUp) {
   let thisCard = card;
   do {
     var otherCard = cardUtil.getSelectedCard(
@@ -154,31 +153,11 @@ CardUtil.prototype.shiftAllDown = function(card, deck) {
       thisCard.locY + CARD_SCALE_WIDTH * 2,
       thisCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
-    const snapFactorX = Math.floor(
-      thisCard.locX / (CARD_SCALE_HEIGHT / 3 + this.spacing)
-    );
+    const snapFactorX = shiftUp
+      ? Math.floor(thisCard.locX / (CARD_SCALE_HEIGHT / 3 + this.spacing)) - 2
+      : Math.floor(thisCard.locX / (CARD_SCALE_HEIGHT / 3 + this.spacing));
     thisCard.locX =
       Math.floor((CARD_SCALE_HEIGHT / 3 + 13) * snapFactorX) + this.topLine;
-
-    if (otherCard) {
-      thisCard = otherCard;
-    }
-  } while (otherCard);
-};
-
-CardUtil.prototype.shiftAllUp = function(card, deck) {
-  let thisCard = card;
-  do {
-    var otherCard = cardUtil.getSelectedCard(
-      deck,
-      thisCard.locY + CARD_SCALE_WIDTH * 2,
-      thisCard.locX + CARD_SCALE_HEIGHT * 0.4
-    );
-    const snapFactorX =
-      Math.floor(thisCard.locX / (CARD_SCALE_HEIGHT / 3 + this.spacing)) - 2;
-    thisCard.locX =
-      Math.floor((CARD_SCALE_HEIGHT / 3 + 13) * snapFactorX) + this.topLine;
-
     if (otherCard) {
       thisCard = otherCard;
     }
@@ -208,4 +187,38 @@ CardUtil.prototype.areThereCardsBelowTopRow = function(deck) {
     }
   }
   return false;
+};
+
+CardUtil.prototype.getEndOfRow = function(card, deck, toLeft) {
+  card.isSelected = false;
+  const getLocY = toLeft
+    ? y => y - CARD_SCALE_WIDTH * 0.9
+    : y => y + CARD_SCALE_WIDTH * 1.7;
+  let otherCard;
+  let thisCard = card;
+  do {
+    otherCard = cardUtil.getSelectedCard(
+      deck,
+      getLocY(thisCard.locY),
+      thisCard.locX + CARD_SCALE_HEIGHT * 0.4
+    );
+    if (otherCard) {
+      thisCard = otherCard;
+    }
+  } while (otherCard);
+  thisCard.isSelected = true;
+  return thisCard;
+};
+
+CardUtil.prototype.setDeckOrder = function(deck, order) {
+  let target;
+  const checkForTarget = function (card)  {
+    return card.value == target;
+  }
+  for (let i = order.length - 1; i >= 0; i--) {
+    target = order[i];
+    const index = deck.findIndex(checkForTarget);
+    console.log(`Index: ${i}, ${order[i]}, ${index}`);
+  }
+  return deck;
 };
