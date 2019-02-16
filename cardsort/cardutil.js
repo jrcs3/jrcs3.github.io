@@ -32,9 +32,7 @@ CardUtil.prototype.shuffle = function(a) {
 CardUtil.prototype.getSuitOfCards = function(suit, order) {
   var deckOfCards = [];
   const suiteId = suit - 1;
-  //for (var cardId = 1; cardId <= 13; ++cardId) {
-  for(var cardId of order) {
-    console.log(cardId);
+  for (var cardId of order) {
     deckOfCards.push(
       new Card(
         suiteId,
@@ -137,7 +135,6 @@ CardUtil.prototype.shiftAllHorz = function(card, deck, shiftLeft) {
       ? Math.floor(thisCard.locY / this.cardWidth) - 1
       : Math.floor(thisCard.locY / this.cardWidth) + 1;
     thisCard.locY = Math.floor(this.cardWidth * snapFactorY) + this.leftOffset;
-    //thisCard.locX += CARD_SCALE_HEIGHT / 3 + this.spacing;
 
     if (otherCard) {
       thisCard = otherCard;
@@ -210,15 +207,53 @@ CardUtil.prototype.getEndOfRow = function(card, deck, toLeft) {
   return thisCard;
 };
 
-CardUtil.prototype.setDeckOrder = function(deck, order) {
-  let target;
-  const checkForTarget = function (card)  {
-    return card.value == target;
-  }
-  for (let i = order.length - 1; i >= 0; i--) {
-    target = order[i];
-    const index = deck.findIndex(checkForTarget);
-    console.log(`Index: ${i}, ${order[i]}, ${index}`);
-  }
-  return deck;
+CardUtil.prototype.getMiddleOfRow = function(selectedCard, deck) {
+  selectedCard.isSelected = false;
+  let foo = this.getEndOfRow(selectedCard, deck, true);
+  foo.isSelected = false;
+  let cardCount = this.getCountItemToRight(foo, deck);
+  const middleCard = this.getGetNthItemFromLeft(
+    foo,
+    deck,
+    Math.ceil((cardCount + 0.1) / 2)
+  );
+  return middleCard;
+};
+
+CardUtil.prototype.getGetNthItemFromLeft = function(card, deck, n) {
+  let count = 1;
+  const getLocY = y => y + CARD_SCALE_WIDTH * 1.7;
+  let otherCard;
+  let thisCard = card;
+  do {
+    otherCard = cardUtil.getSelectedCard(
+      deck,
+      getLocY(thisCard.locY),
+      thisCard.locX + CARD_SCALE_HEIGHT * 0.4
+    );
+    if (otherCard) {
+      thisCard = otherCard;
+      count++;
+    }
+  } while (otherCard && count < n);
+  return thisCard;
+};
+
+CardUtil.prototype.getCountItemToRight = function(card, deck) {
+  let count = 1;
+  const getLocY = y => y + CARD_SCALE_WIDTH * 1.7;
+  let otherCard;
+  let thisCard = card;
+  do {
+    otherCard = cardUtil.getSelectedCard(
+      deck,
+      getLocY(thisCard.locY),
+      thisCard.locX + CARD_SCALE_HEIGHT * 0.4
+    );
+    if (otherCard) {
+      thisCard = otherCard;
+      count++;
+    }
+  } while (otherCard);
+  return count;
 };

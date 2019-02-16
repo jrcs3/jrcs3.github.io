@@ -45,6 +45,7 @@ function linkControls() {
   bindCtlTo("btnQusMoveToCol", "click", moveToCol);
   bindCtlTo("btnQusFirstInRow", "click", firstInRow);
   bindCtlTo("btnQusLastInRow", "click", lastInRow);
+  bindCtlTo("btnMerGetMiddleOfRow", "click", middleOfRow);
   bindCtlTo("body", "keydown", canvasKeyDown);
 }
 
@@ -72,7 +73,13 @@ function canvasKeyDown(e) {
     case "ArrowRight":
       return shiftAllRight();
   }
-  //console.log(e);
+}
+
+function middleOfRow() {
+  if (selectedCard) {
+    selectedCard.isSelected = false;
+    selectedCard = cardUtil.getMiddleOfRow(selectedCard, deck);
+  }
 }
 
 function firstInRow() {
