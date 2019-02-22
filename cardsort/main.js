@@ -46,7 +46,37 @@ function linkControls() {
   bindCtlTo("btnQusFirstInRow", "click", firstInRow);
   bindCtlTo("btnQusLastInRow", "click", lastInRow);
   bindCtlTo("btnMerGetMiddleOfRow", "click", middleOfRow);
+  bindCtlTo("btnComGetUrl", "click", getCardOrder);
+  bindCtlTo("btnComTest", "click", test);
   bindCtlTo("body", "keydown", canvasKeyDown);
+}
+
+function test() {
+  let cardCount = cardUtil.getCountItemToRight(selectedCard, deck);
+  const stepFactor = Math.ceil(Math.log2(cardCount));
+  if (stepFactor === 0) {
+    // is sorted by default
+  } else if (stepFactor === 1) {
+    // small enough to sort
+  } else {
+    selectedCard.isSelected = false;
+    const stepsDown = stepFactor;
+    selectedCard = cardUtil.getMiddleOfRow(selectedCard, deck);
+    for (let i = 0; i < stepsDown; ++i) {
+      cardUtil.shiftAllVert(selectedCard, deck, false);
+    }
+    // split again
+  }
+  if (selectedCard) {
+    selectedCard.isSelected = false;
+    selectedCard = cardUtil.getEndOfRow(selectedCard, deck, false);
+    selectedCard.isSelected = false;
+    selectedCard = cardUtil.getLeftmostCard(deck, selectedCard.locY + 1);
+    if (selectedCard === null) {
+      selectedCard = cardUtil.getLeftmostCard(deck);
+    }
+    selectedCard.isSelected = true;
+  }
 }
 
 function bindCtlTo(id, event, action) {
@@ -73,6 +103,10 @@ function canvasKeyDown(e) {
     case "ArrowRight":
       return shiftAllRight();
   }
+}
+
+function getCardOrder() {
+  alert(cardUtil.getCardOrder(deck));
 }
 
 function middleOfRow() {

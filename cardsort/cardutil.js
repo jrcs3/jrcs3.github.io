@@ -77,11 +77,11 @@ CardUtil.prototype.unswapAll = function(deck) {
   }
 };
 
-CardUtil.prototype.getLeftmostCard = function(deck) {
-  var leftMostCard = {};
+CardUtil.prototype.getLeftmostCard = function(deck, startLeft = 0) {
+  var leftMostCard = null;
   var minYSoFar = 99999;
   for (var card of deck) {
-    if (card.locY < minYSoFar) {
+    if (card.locY < minYSoFar && card.locY >= startLeft) {
       leftMostCard = card;
       minYSoFar = card.locY;
     }
@@ -161,13 +161,14 @@ CardUtil.prototype.shiftAllVert = function(card, deck, shiftUp) {
   } while (otherCard);
 };
 
-CardUtil.prototype.getLeftmostCardOnTopRow = function(deck) {
+CardUtil.prototype.getLeftmostCardOnTopRow = function(deck, startLeft = 0) {
   var leftMostCard = null;
   var minYSoFar = 99999;
   for (var card of deck) {
     if (
       card.locX <= this.topLine + 20 &&
       this.topLine + 20 <= card.locX + CARD_SCALE_HEIGHT &&
+      card.locY >= startLeft &&
       card.locY < minYSoFar
     ) {
       leftMostCard = card;
@@ -256,4 +257,23 @@ CardUtil.prototype.getCountItemToRight = function(card, deck) {
     }
   } while (otherCard);
   return count;
+};
+
+CardUtil.prototype.getCardOrder = function(deck) {
+  let thisCard = this.getLeftmostCard(deck);
+  let cardOrderQuerystring = `?suit=${thisCard.suit}&order=${thisCard.value}`;
+  const getLocY = y => y + CARD_SCALE_WIDTH * 1.7;
+  let otherCard;
+  do {
+    otherCard = cardUtil.getSelectedCard(
+      deck,
+      getLocY(thisCard.locY),
+      thisCard.locX + CARD_SCALE_HEIGHT * 0.4
+    );
+    if (otherCard) {
+      thisCard = otherCard;
+      cardOrderQuerystring += `,${thisCard.value}`;
+    }
+  } while (otherCard);
+  return cardOrderQuerystring;
 };
