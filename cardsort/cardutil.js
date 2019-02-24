@@ -3,7 +3,7 @@ function CardUtil(
   offsetTop,
   topLine = 47,
   leftOffset = 16,
-  spacing = 13
+  spacing = 13,
 ) {
   this.topLine = topLine;
   this.leftOffset = leftOffset;

@@ -11,7 +11,8 @@ const state = {
   isDirty: false,
   comparisons: 0,
   cycles: 0,
-  isSorted: false
+  isSorted: false,
+  mergeStage: 0
 };
 var dragok = false;
 
@@ -52,30 +53,67 @@ function linkControls() {
 }
 
 function test() {
-  let cardCount = cardUtil.getCountItemToRight(selectedCard, deck);
-  const stepFactor = Math.ceil(Math.log2(cardCount));
-  if (stepFactor === 0) {
-    // is sorted by default
-  } else if (stepFactor === 1) {
-    // small enough to sort
-  } else {
-    selectedCard.isSelected = false;
-    const stepsDown = stepFactor;
-    selectedCard = cardUtil.getMiddleOfRow(selectedCard, deck);
-    for (let i = 0; i < stepsDown; ++i) {
-      cardUtil.shiftAllVert(selectedCard, deck, false);
-    }
-    // split again
+  if (state.mergeStage === 0) {
+    state.mergeStage = 1;
   }
-  if (selectedCard) {
-    selectedCard.isSelected = false;
-    selectedCard = cardUtil.getEndOfRow(selectedCard, deck, false);
-    selectedCard.isSelected = false;
-    selectedCard = cardUtil.getLeftmostCard(deck, selectedCard.locY + 1);
-    if (selectedCard === null) {
-      selectedCard = cardUtil.getLeftmostCard(deck);
+  if (state.mergeStage === 1) {
+    let cardCount = cardUtil.getCountItemToRight(selectedCard, deck);
+    const stepFactor = Math.ceil(Math.log2(cardCount));
+    if (stepFactor === 0) {
+      // is sorted by default
+    } else if (stepFactor === 1) {
+      state.comparisons++;
+      var otherCard = cardUtil.getSelectedCard(
+        deck,
+        selectedCard.locY + CARD_SCALE_WIDTH * 2,
+        selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+      );
+      if (otherCard && selectedCard.value > otherCard.value) {
+        otherCard.swapped = true;
+        cardUtil.cardSwap(selectedCard, otherCard, state);
+      }
+    } else {
+      selectedCard.isSelected = false;
+      const stepsDown = getSteps(stepFactor);
+      selectedCard = cardUtil.getMiddleOfRow(selectedCard, deck);
+      for (let i = 0; i < stepsDown; ++i) {
+        cardUtil.shiftAllVert(selectedCard, deck, false);
+      }
+      state.isDirty = true;
+      // split again
     }
-    selectedCard.isSelected = true;
+    if (selectedCard) {
+      selectedCard.isSelected = false;
+      selectedCard = cardUtil.getEndOfRow(selectedCard, deck, false);
+      selectedCard.isSelected = false;
+      selectedCard = cardUtil.getLeftmostCard(deck, selectedCard.locY + 1);
+      if (selectedCard === null) {
+        selectedCard = cardUtil.getLeftmostCard(deck);
+        state.cycles++;
+        if (stepFactor <= 1) {
+          state.mergeStage = 2;
+        }
+        this.isDirty = false;
+      }
+      selectedCard.isSelected = true;
+    } else if (state.mergeStage === 2) {
+      // foo
+    }
+  }
+}
+
+function getSteps(stepFactor) {
+  switch (stepFactor) {
+    case 4:
+      return 8;
+    case 3:
+      return 4;
+    case 2:
+      return 2;
+    case 1:
+      return 1;
+    default:
+      return 0;
   }
 }
 
@@ -142,7 +180,6 @@ function moveToCol() {
 
 function swapRight() {
   if (selectedCard) {
-    //state.comparisons++;
     var otherCard = cardUtil.getSelectedCard(
       deck,
       selectedCard.locY + CARD_SCALE_WIDTH * 2,
@@ -180,7 +217,7 @@ function mergeNextMove() {
       cardUtil.shiftAllHorz(selectedCard, deck, false);
       card.locX = x;
       card.locY = y;
-      var otherCard = cardUtil.getSelectedCard(
+      let otherCard = cardUtil.getSelectedCard(
         deck,
         selectedCard.locY + CARD_SCALE_WIDTH * 2,
         selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
@@ -191,7 +228,7 @@ function mergeNextMove() {
       mergeProcessFoundMatch(card);
     } else {
       selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-      var otherCard = cardUtil.getSelectedCard(
+      let otherCard = cardUtil.getSelectedCard(
         deck,
         selectedCard.locY + CARD_SCALE_WIDTH * 2,
         selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
@@ -260,6 +297,7 @@ function resetDeck() {
   state.comparisons = 0;
   state.cycles = 0;
   state.isSorted = false;
+  state.mergeStage = 0;
   selectedCard = cardUtil.getLeftmostCard(deck);
 }
 
