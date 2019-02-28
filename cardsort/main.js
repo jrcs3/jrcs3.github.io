@@ -7,22 +7,26 @@ var y = 50;
 const drawer = new Drawer();
 const cardUtil = new CardUtil();
 
+
+let _merge = new Merge(cardUtil);
+
 const state = {
   isDirty: false,
   comparisons: 0,
   cycles: 0,
   isSorted: false,
-  mergeStage: 0
+  selectedCard: {},
+  deck: {}
 };
 var dragok = false;
 
 var order = getInitalOrder();
 
-let suit = parseInt(getParameterByName("suit") || 2);
+let suit = parseInt(getParameterByName("suit") || Math.floor(Math.random() * 4));
 //let suit = Math.floor(Math.random() * 4);
-let deck = cardUtil.getSuitOfCards(suit, order);
-//deck = cardUtil.setDeckOrder(deck, order);
-let selectedCard;
+state.deck = cardUtil.getSuitOfCards(suit, order);
+//state.deck = cardUtil.setDeckOrder(state.deck, order);
+//let state.selectedCard;
 resetDeck();
 
 var img = new Image();
@@ -32,13 +36,13 @@ function linkControls() {
   bindCtlTo("btnComShuffle", "click", shuffle);
   bindCtlTo("btnBubMoveDown", "click", moveDown);
   bindCtlTo("btnBubSwapNext", "click", swapAndMoveDown);
-  bindCtlTo("btnBubNextMove", "click", e => nextMove(false));
-  bindCtlTo("btnBubNextMoveShortcut", "click", e => nextMove(true));
+  bindCtlTo("btnBubNextMove", "click", e => bubbleNextMove(false));
+  bindCtlTo("btnBubNextMoveShortcut", "click", e => bubbleNextMove(true));
   bindCtlTo("btnComReset", "click", resetDeck);
   bindCtlTo("btnComSnap", "click", snapSelectedCard);
   bindCtlTo("btnComLineUp", "click", lineupCards);
   bindCtlTo("btnInsShiftAllRight", "click", shiftAllRight);
-  bindCtlTo("btnInsNextMove", "click", mergeNextMove);
+  bindCtlTo("btnInsNextMove", "click", insertNextMove);
   bindCtlTo("btnMerShiftAllDown", "click", shiftAllDown);
   bindCtlTo("btnInsMoveDown", "click", moveDown);
   bindCtlTo("btnMerShiftAllUp", "click", shiftAllUp);
@@ -48,72 +52,18 @@ function linkControls() {
   bindCtlTo("btnQusLastInRow", "click", lastInRow);
   bindCtlTo("btnMerGetMiddleOfRow", "click", middleOfRow);
   bindCtlTo("btnComGetUrl", "click", getCardOrder);
-  bindCtlTo("btnComTest", "click", test);
+  bindCtlTo("btnComTest", "click", mergeNextMove);
   bindCtlTo("body", "keydown", canvasKeyDown);
 }
 
-function test() {
-  if (state.mergeStage === 0) {
-    state.mergeStage = 1;
+function mergeNextMove() {
+  if (_merge.mergeStage === 0) {
+    _merge.mergeStage = 1;
   }
-  if (state.mergeStage === 1) {
-    let cardCount = cardUtil.getCountItemToRight(selectedCard, deck);
-    const stepFactor = Math.ceil(Math.log2(cardCount));
-    if (stepFactor === 0) {
-      // is sorted by default
-    } else if (stepFactor === 1) {
-      state.comparisons++;
-      var otherCard = cardUtil.getSelectedCard(
-        deck,
-        selectedCard.locY + CARD_SCALE_WIDTH * 2,
-        selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
-      );
-      if (otherCard && selectedCard.value > otherCard.value) {
-        otherCard.swapped = true;
-        cardUtil.cardSwap(selectedCard, otherCard, state);
-      }
-    } else {
-      selectedCard.isSelected = false;
-      const stepsDown = getSteps(stepFactor);
-      selectedCard = cardUtil.getMiddleOfRow(selectedCard, deck);
-      for (let i = 0; i < stepsDown; ++i) {
-        cardUtil.shiftAllVert(selectedCard, deck, false);
-      }
-      state.isDirty = true;
-      // split again
-    }
-    if (selectedCard) {
-      selectedCard.isSelected = false;
-      selectedCard = cardUtil.getEndOfRow(selectedCard, deck, false);
-      selectedCard.isSelected = false;
-      selectedCard = cardUtil.getLeftmostCard(deck, selectedCard.locY + 1);
-      if (selectedCard === null) {
-        selectedCard = cardUtil.getLeftmostCard(deck);
-        state.cycles++;
-        if (stepFactor <= 1) {
-          state.mergeStage = 2;
-        }
-        this.isDirty = false;
-      }
-      selectedCard.isSelected = true;
-    } else if (state.mergeStage === 2) {
-      // foo
-    }
-  }
-}
-
-function getSteps(stepFactor) {
-  switch (stepFactor) {
-    case 4:
-      return 8;
-    case 3:
-      return 4;
-    case 2:
-      return 2;
-    case 1:
-      return 1;
-    default:
-      return 0;
+  if (_merge.mergeStage === 1) {
+    _merge.mergeDivide(state);
+  } else if (_merge.mergeStage >= 2) {
+    _merge.mergeCombineTwoLists(state);
   }
 }
 
@@ -125,11 +75,11 @@ function bindCtlTo(id, event, action) {
 function canvasKeyDown(e) {
   switch (e.key) {
     case "1":
-      return nextMove(false);
+      return bubbleNextMove(false);
     case "2":
-      return nextMove(true);
+      return bubbleNextMove(true);
     case "3":
-      return mergeNextMove();
+      return insertNextMove();
     case "a":
       return snapSelectedCard();
     case "ArrowDown":
@@ -144,101 +94,112 @@ function canvasKeyDown(e) {
 }
 
 function getCardOrder() {
-  alert(cardUtil.getCardOrder(deck));
+  alert(cardUtil.getCardOrder(state.deck));
 }
 
 function middleOfRow() {
-  if (selectedCard) {
-    selectedCard.isSelected = false;
-    selectedCard = cardUtil.getMiddleOfRow(selectedCard, deck);
+  if (state.selectedCard) {
+    state.selectedCard.isSelected = false;
+    state.selectedCard = cardUtil.getMiddleOfRow(
+      state.selectedCard,
+      state.deck
+    );
   }
 }
 
 function firstInRow() {
-  if (selectedCard) {
-    selectedCard.isSelected = false;
-    selectedCard = cardUtil.getEndOfRow(selectedCard, deck, true);
+  if (state.selectedCard) {
+    state.selectedCard.isSelected = false;
+    state.selectedCard = cardUtil.getEndOfRow(
+      state.selectedCard,
+      state.deck,
+      true
+    );
   }
 }
 
 function lastInRow() {
-  if (selectedCard) {
-    selectedCard.isSelected = false;
-    selectedCard = cardUtil.getEndOfRow(selectedCard, deck, false);
+  if (state.selectedCard) {
+    state.selectedCard.isSelected = false;
+    state.selectedCard = cardUtil.getEndOfRow(
+      state.selectedCard,
+      state.deck,
+      false
+    );
   }
 }
 
 function moveToCol() {
-  if (selectedCard) {
-    selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-    selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-    selectedCard.locY =
-      Math.floor(cardUtil.cardWidth * (selectedCard.value - 1)) +
+  if (state.selectedCard) {
+    state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    state.selectedCard.locY =
+      Math.floor(cardUtil.cardWidth * (state.selectedCard.value - 1)) +
       cardUtil.leftOffset;
   }
 }
 
 function swapRight() {
-  if (selectedCard) {
-    var otherCard = cardUtil.getSelectedCard(
-      deck,
-      selectedCard.locY + CARD_SCALE_WIDTH * 2,
-      selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+  if (state.selectedCard) {
+    var otherCard = cardUtil.getstate.selectedCard(
+      state.deck,
+      state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
+      state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
     if (otherCard) {
-      cardUtil.cardSwap(selectedCard, otherCard, state);
+      cardUtil.cardSwap(state.selectedCard, otherCard, state);
     }
   }
 }
 
 function shuffle() {
-  cardUtil.shuffle(deck);
+  cardUtil.shuffle(state.deck);
   resetDeck();
 }
 
-function mergeNextMove() {
-  if (!cardUtil.areThereCardsBelowTopRow(deck)) {
-    selectedCard = cardUtil.getLeftmostCard(deck);
-    selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-    selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-    selectedCard.isSelected = true;
+function insertNextMove() {
+  if (!cardUtil.areThereCardsBelowTopRow(state.deck)) {
+    state.selectedCard = cardUtil.getLeftmostCard(state.deck);
+    state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    state.selectedCard.isSelected = true;
     return;
   }
-  if (selectedCard) {
-    const card = cardUtil.getLeftmostCardOnTopRow(deck);
+  if (state.selectedCard) {
+    const card = cardUtil.getLeftmostCardOnTopRow(state.deck);
     state.comparisons++;
-    if (card && card.value < selectedCard.value) {
-      selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    if (card && card.value < state.selectedCard.value) {
+      state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
       card.swapped = true;
       card.isSelected = false;
-      selectedCard.isSelected = false;
-      const x = selectedCard.locX;
-      const y = selectedCard.locY;
-      cardUtil.shiftAllHorz(selectedCard, deck, false);
+      state.selectedCard.isSelected = false;
+      const x = state.selectedCard.locX;
+      const y = state.selectedCard.locY;
+      cardUtil.shiftAllHorz(state.selectedCard, state.deck, false);
       card.locX = x;
       card.locY = y;
-      let otherCard = cardUtil.getSelectedCard(
-        deck,
-        selectedCard.locY + CARD_SCALE_WIDTH * 2,
-        selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+      let otherCard = cardUtil.getstate.selectedCard(
+        state.deck,
+        state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
+        state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
       );
       if (otherCard) {
-        cardUtil.shiftAllVert(otherCard, deck, false);
+        cardUtil.shiftAllVert(otherCard, state.deck, false);
       }
       mergeProcessFoundMatch(card);
     } else {
-      selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-      let otherCard = cardUtil.getSelectedCard(
-        deck,
-        selectedCard.locY + CARD_SCALE_WIDTH * 2,
-        selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+      state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+      let otherCard = cardUtil.getstate.selectedCard(
+        state.deck,
+        state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
+        state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
       );
       if (otherCard) {
-        selectedCard.isSelected = false;
-        selectedCard = otherCard;
+        state.selectedCard.isSelected = false;
+        state.selectedCard = otherCard;
       } else {
-        card.locX = selectedCard.locX;
-        selectedCard.isSelected = false;
+        card.locX = state.selectedCard.locX;
+        state.selectedCard.isSelected = false;
         mergeProcessFoundMatch(card);
       }
     }
@@ -246,73 +207,74 @@ function mergeNextMove() {
 }
 
 function mergeProcessFoundMatch(card) {
-  const otherCard = cardUtil.getLeftmostCardOnTopRow(deck);
+  const otherCard = cardUtil.getLeftmostCardOnTopRow(state.deck);
   if (!otherCard) {
     state.isSorted = true;
   }
-  selectedCard = cardUtil.getLeftmostCard(deck);
-  cardUtil.unswapAll(deck);
+  state.selectedCard = cardUtil.getLeftmostCard(state.deck);
+  cardUtil.unswapAll(state.deck);
   card.swapped = true;
   state.cycles++;
   state.isDirty = false;
 }
 
 function shiftAllRight() {
-  if (selectedCard) {
-    cardUtil.shiftAllHorz(selectedCard, deck, false);
+  if (state.selectedCard) {
+    cardUtil.shiftAllHorz(state.selectedCard, state.deck, false);
   }
 }
 
 function shiftAllLeft() {
-  if (selectedCard) {
-    cardUtil.shiftAllHorz(selectedCard, deck, true);
+  if (state.selectedCard) {
+    cardUtil.shiftAllHorz(state.selectedCard, state.deck, true);
   }
 }
 
 function shiftAllDown() {
-  if (selectedCard) {
-    cardUtil.shiftAllVert(selectedCard, deck, false);
+  if (state.selectedCard) {
+    cardUtil.shiftAllVert(state.selectedCard, state.deck, false);
   }
 }
 
 function shiftAllUp() {
-  if (selectedCard) {
-    cardUtil.shiftAllVert(selectedCard, deck, true);
+  if (state.selectedCard) {
+    cardUtil.shiftAllVert(state.selectedCard, state.deck, true);
   }
 }
 
 function lineupCards() {
-  cardUtil.snapCards(deck);
-  cardUtil.lineupCards(deck);
+  cardUtil.snapCards(state.deck);
+  cardUtil.lineupCards(state.deck);
 }
 
 function snapSelectedCard() {
-  cardUtil.snapCards(deck);
+  cardUtil.snapCards(state.deck);
 }
 
 function resetDeck() {
-  selectedCard = null;
-  cardUtil.placeCardPostions(deck);
+  state.selectedCard = null;
+  cardUtil.placeCardPostions(state.deck);
   state.isDirty = false;
   state.comparisons = 0;
   state.cycles = 0;
   state.isSorted = false;
-  state.mergeStage = 0;
-  selectedCard = cardUtil.getLeftmostCard(deck);
+  //state.mergeStage = 0;
+  _merge.reset(state);
+  state.selectedCard = cardUtil.getLeftmostCard(state.deck);
 }
 
-function nextMove(shortcut) {
-  if (selectedCard) {
+function bubbleNextMove(shortcut) {
+  if (state.selectedCard) {
     let skip = false;
     state.comparisons++;
-    var otherCard = cardUtil.getSelectedCard(
-      deck,
-      selectedCard.locY + CARD_SCALE_WIDTH * 2,
-      selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+    var otherCard = cardUtil.getstate.selectedCard(
+      state.deck,
+      state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
+      state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
     if (shortcut && otherCard) {
-      var anotherCard = cardUtil.getSelectedCard(
-        deck,
+      var anotherCard = cardUtil.getstate.selectedCard(
+        state.deck,
         otherCard.locY + CARD_SCALE_WIDTH * 2,
         otherCard.locX + CARD_SCALE_HEIGHT * 0.6
       );
@@ -322,25 +284,25 @@ function nextMove(shortcut) {
     }
 
     if (otherCard) {
-      if (otherCard.value < selectedCard.value) {
-        cardUtil.cardSwapAndShift(selectedCard, otherCard, state);
+      if (otherCard.value < state.selectedCard.value) {
+        cardUtil.cardSwapAndShift(state.selectedCard, otherCard, state);
       } else {
-        selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-        selectedCard.isSelected = false;
-        selectedCard = otherCard;
+        state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+        state.selectedCard.isSelected = false;
+        state.selectedCard = otherCard;
       }
       if (skip) {
-        selectedCard = cardUtil.getLeftmostCard(deck);
-        cardUtil.unswapAll(deck);
+        state.selectedCard = cardUtil.getLeftmostCard(state.deck);
+        cardUtil.unswapAll(state.deck);
         state.isSorted = !state.isDirty;
         state.cycles++;
         state.isDirty = false;
       }
     } else {
-      selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-      selectedCard.isSelected = false;
-      selectedCard = cardUtil.getLeftmostCard(deck);
-      cardUtil.unswapAll(deck);
+      state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+      state.selectedCard.isSelected = false;
+      state.selectedCard = cardUtil.getLeftmostCard(state.deck);
+      cardUtil.unswapAll(state.deck);
       state.isSorted = !state.isDirty;
       state.cycles++;
       state.isDirty = false;
@@ -349,21 +311,21 @@ function nextMove(shortcut) {
 }
 
 function moveDown() {
-  if (selectedCard) {
+  if (state.selectedCard) {
     state.comparisons++;
-    selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-    var otherCard = cardUtil.getSelectedCard(
-      deck,
-      selectedCard.locY + CARD_SCALE_WIDTH * 2,
-      selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+    state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
+    var otherCard = cardUtil.getstate.selectedCard(
+      state.deck,
+      state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
+      state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
     if (otherCard) {
-      selectedCard.isSelected = false;
-      selectedCard = otherCard;
+      state.selectedCard.isSelected = false;
+      state.selectedCard = otherCard;
     } else {
-      selectedCard.isSelected = false;
-      selectedCard = cardUtil.getLeftmostCard(deck);
-      cardUtil.unswapAll(deck);
+      state.selectedCard.isSelected = false;
+      state.selectedCard = cardUtil.getLeftmostCard(state.deck);
+      cardUtil.unswapAll(state.deck);
       state.cycles++;
       state.isDirty = false;
     }
@@ -371,15 +333,15 @@ function moveDown() {
 }
 
 function swapAndMoveDown() {
-  if (selectedCard) {
+  if (state.selectedCard) {
     state.comparisons++;
-    var otherCard = cardUtil.getSelectedCard(
-      deck,
-      selectedCard.locY + CARD_SCALE_WIDTH * 2,
-      selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+    var otherCard = cardUtil.getstate.selectedCard(
+      state.deck,
+      state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
+      state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
     if (otherCard) {
-      cardUtil.cardSwapAndShift(selectedCard, otherCard, state);
+      cardUtil.cardSwapAndShift(state.selectedCard, otherCard, state);
     }
   }
 }
@@ -406,26 +368,32 @@ function init() {
 }
 
 function myDraw() {
-  drawer.draw(ctx, deck, selectedCard, state);
+  drawer.draw(ctx, state.deck, state.selectedCard, state);
 }
 
 function myMove(e) {
   if (dragok) {
     x = e.pageX - cardUtil.offsetLeft;
     y = e.pageY - cardUtil.offsetTop;
-    selectedCard.locX = y - (selectedCard.locOffX - cardUtil.offsetLeft);
-    selectedCard.locY = x - (selectedCard.locOffY - cardUtil.offsetTop);
+    state.selectedCard.locX =
+      y - (state.selectedCard.locOffX - cardUtil.offsetLeft);
+    state.selectedCard.locY =
+      x - (state.selectedCard.locOffY - cardUtil.offsetTop);
   }
 }
 
 function myDown(e) {
-  if (selectedCard) {
-    selectedCard.isSelected = false;
-    selectedCard = null;
+  if (state.selectedCard) {
+    state.selectedCard.isSelected = false;
+    state.selectedCard = null;
   }
-  selectedCard = cardUtil.getSelectedCard(deck, e.pageX, e.pageY);
-  if (selectedCard) {
-    selectedCard.isSelected = true;
+  state.selectedCard = cardUtil.getstate.selectedCard(
+    state.deck,
+    e.pageX,
+    e.pageY
+  );
+  if (state.selectedCard) {
+    state.selectedCard.isSelected = true;
     x = e.pageX - cardUtil.offsetLeft;
     y = e.pageY - cardUtil.offsetTop;
     dragok = true;
