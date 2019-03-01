@@ -17,10 +17,11 @@ Merge.prototype.mergeDivide = function(state) {
     // is sorted by default
   } else if (stepFactor === 1) {
     state.comparisons++;
-    const otherCard = this.cardUtil.getstate.selectedCard(
+    const otherCard = this.cardUtil.getLeftmostCard(
       state.deck,
-      state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
-      state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+      state.selectedCard.locY + CARD_SCALE_WIDTH
+      //(state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
+      //state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4) 
     );
     if (otherCard && state.selectedCard.value > otherCard.value) {
       otherCard.swapped = true;

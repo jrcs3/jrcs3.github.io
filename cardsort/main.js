@@ -63,6 +63,7 @@ function mergeNextMove() {
   if (_merge.mergeStage === 1) {
     _merge.mergeDivide(state);
   } else if (_merge.mergeStage >= 2) {
+    alert('Merge')
     _merge.mergeCombineTwoLists(state);
   }
 }

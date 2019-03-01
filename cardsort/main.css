@@ -1,0 +1,18 @@
+button {
+  padding: 4px 6px;
+}
+canvas {
+  background: green;
+}
+.canvasContainer {
+  grid-area: main;
+}
+.controls {
+  grid-area: right;
+  padding: 8px;
+}
+.grid-container {
+  display: grid;
+  grid-template-columns: 800px auto;
+  grid-template-areas: "main right";
+}
