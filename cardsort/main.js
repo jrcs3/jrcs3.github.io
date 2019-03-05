@@ -142,8 +142,9 @@ function moveToCol() {
 
 function swapRight() {
   if (state.selectedCard) {
-    var otherCard = cardUtil.getstate.selectedCard(
+    var otherCard = cardUtil.getLeftmostCard(
       state.deck,
+      //state.selectedCard.locY + CARD_SCALE_WIDTH
       state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
       state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
@@ -179,8 +180,9 @@ function insertNextMove() {
       cardUtil.shiftAllHorz(state.selectedCard, state.deck, false);
       card.locX = x;
       card.locY = y;
-      let otherCard = cardUtil.getstate.selectedCard(
+      let otherCard = cardUtil.getSelectedCard(
         state.deck,
+        //state.selectedCard.locY + CARD_SCALE_WIDTH
         state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
         state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
       );
@@ -190,8 +192,9 @@ function insertNextMove() {
       mergeProcessFoundMatch(card);
     } else {
       state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-      let otherCard = cardUtil.getstate.selectedCard(
+      let otherCard = cardUtil.getSelectedCard(
         state.deck,
+        //state.selectedCard.locY + CARD_SCALE_WIDTH
         state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
         state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
       );
@@ -268,13 +271,13 @@ function bubbleNextMove(shortcut) {
   if (state.selectedCard) {
     let skip = false;
     state.comparisons++;
-    var otherCard = cardUtil.getstate.selectedCard(
+    var otherCard = cardUtil.getSelectedCard(
       state.deck,
       state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
-      state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
+      state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.2
     );
     if (shortcut && otherCard) {
-      var anotherCard = cardUtil.getstate.selectedCard(
+      var anotherCard = cardUtil.getSelectedCard(
         state.deck,
         otherCard.locY + CARD_SCALE_WIDTH * 2,
         otherCard.locX + CARD_SCALE_HEIGHT * 0.6
@@ -315,8 +318,9 @@ function moveDown() {
   if (state.selectedCard) {
     state.comparisons++;
     state.selectedCard.locX += CARD_SCALE_HEIGHT / 3 + 13;
-    var otherCard = cardUtil.getstate.selectedCard(
+    var otherCard = cardUtil.getLeftmostCard(
       state.deck,
+      //state.selectedCard.locY + CARD_SCALE_WIDTH
       state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
       state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
@@ -336,8 +340,9 @@ function moveDown() {
 function swapAndMoveDown() {
   if (state.selectedCard) {
     state.comparisons++;
-    var otherCard = cardUtil.getstate.selectedCard(
+    var otherCard = cardUtil.getLeftmostCard(
       state.deck,
+      //state.selectedCard.locY + CARD_SCALE_WIDTH
       state.selectedCard.locY + CARD_SCALE_WIDTH * 2,
       state.selectedCard.locX + CARD_SCALE_HEIGHT * 0.4
     );
@@ -388,7 +393,7 @@ function myDown(e) {
     state.selectedCard.isSelected = false;
     state.selectedCard = null;
   }
-  state.selectedCard = cardUtil.getstate.selectedCard(
+  state.selectedCard = cardUtil.getLeftmostCard(
     state.deck,
     e.pageX,
     e.pageY
