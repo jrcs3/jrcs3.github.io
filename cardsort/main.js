@@ -393,7 +393,7 @@ function myDown(e) {
     state.selectedCard.isSelected = false;
     state.selectedCard = null;
   }
-  state.selectedCard = cardUtil.getLeftmostCard(
+  state.selectedCard = cardUtil.getSelectedCard(
     state.deck,
     e.pageX,
     e.pageY
